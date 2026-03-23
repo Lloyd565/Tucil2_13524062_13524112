@@ -7,22 +7,10 @@ using namespace std;
 template <typename T>
 class Octree {
     public: 
-        Octree(T parent) {
-            this->parent = parent;
-            for (int i = 0; i < 8; i++) {
-                children[i] = EMPTY_LEAF;
-            }
-        }
-        T getParent() {
-            return parent;
-        }
-        T getChild(int index) {
-            if (index > 0 && index < 8) {
-                return children[index];
-            }
-            return EMPTY_LEAF;
-        }
-    private:
         Octree<T>* children[8];
-        T parent;
+        Octree(T parent);
+        T getParent();
+        T getChild(int index);
+    private:
+        T parent_;
 };

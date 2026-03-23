@@ -63,6 +63,22 @@ class AABB
             return minPointZ;
         }
 
+        static double getCenterX(const vector<Point>& objectMesh){
+            return (maxPointX(objectMesh) + minPointX(objectMesh)) / 2;
+        }
+
+        static double getCenterY(const vector<Point>& objectMesh){
+            return (maxPointY(objectMesh) + minPointY(objectMesh)) / 2;
+        }
+
+        static double getCenterZ(const vector<Point>& objectMesh){
+            return (maxPointZ(objectMesh) + minPointZ(objectMesh)) / 2;
+        }
+
+        static Point getCenterPoint(const vector<Point>& objectMesh){
+            return Point(getCenterX(objectMesh), getCenterY(objectMesh), getCenterZ(objectMesh));
+        }
+
         static bool computeAABBPoint(const vector<Point>& objectMesh, const Point& Point){
             double maxX = maxPointX(objectMesh);
             double minX = minPointX(objectMesh);
@@ -91,5 +107,5 @@ class AABB
             return (maxX1 >= minX2 && minX1 <= maxX2) && (maxY1 >= minY2 && minY1 <= maxY2) && (maxZ1 >= minZ2 && minZ1 <= maxZ2);
         }
 
-        
+
 };
