@@ -2,7 +2,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-#define EMPTY_LEAF = nullptr;
+#define EMPTY_LEAF nullptr;
 
 template <typename T>
 class Octree {
@@ -11,6 +11,7 @@ class Octree {
         Octree(T parent);
         T getParent();
         T getChild(int index);
+
     private:
         T parent_;
 };

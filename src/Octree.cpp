@@ -2,7 +2,7 @@
 
 template <typename T>
 Octree<T>::Octree(T parent) {
-    this->parent = parent;
+    this->parent_ = parent;
     for (int i = 0; i < 8; i++) {
         children[i] = EMPTY_LEAF;
     }
@@ -14,7 +14,7 @@ T Octree<T>::getParent() {
 
 template <typename T>
 T Octree<T>::getChild(int index) {
-    if (index > 0 && index < 8) {
+    if (index >= 0 && index < 8) {
         return children[index];
     }
     return EMPTY_LEAF;
