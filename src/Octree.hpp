@@ -1,17 +1,16 @@
 #pragma once
+#include "AABB.hpp"
 #include <bits/stdc++.h>
 using namespace std;
 
-#define EMPTY_LEAF nullptr;
-
-template <typename T>
 class Octree {
-    public: 
-        Octree<T>* children[8];
-        Octree(T parent);
-        T getParent();
-        T getChild(int index);
-
-    private:
-        T parent_;
+    public:
+        AABB BB;
+        Octree* children[8];
+        bool isMaxDepth;
+        bool isVoxel;
+        
+        Octree(const AABB& bb, bool isMaxDepth=false, bool isVoxel=false);
+        ~Octree();
+        vector<AABB> divideBB() const;
 };

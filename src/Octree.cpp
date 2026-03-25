@@ -1,21 +1,34 @@
 #include "Octree.hpp"
 
-template <typename T>
-Octree<T>::Octree(T parent) {
-    this->parent_ = parent;
-    for (int i = 0; i < 8; i++) {
-        children[i] = EMPTY_LEAF;
-    }
-}
-template <typename T>
-T Octree<T>::getParent() {
-    return this->parent;
+Octree::Octree(const AABB& BB, bool isMaxDepth, bool isVoxel){
+        this->BB = BB;
+        for (int i = 0; i < 8; i++){
+            children[i] = nullptr;
+        }
+        this->isMaxDepth = isMaxDepth;
+        this->isVoxel = isVoxel;
 }
 
-template <typename T>
-T Octree<T>::getChild(int index) {
-    if (index >= 0 && index < 8) {
-        return children[index];
+Octree::~Octree() {
+    for (int i = 0; i < 8; i++) {
+        if(children[i] != nullptr){delete children[i];}
     }
-    return EMPTY_LEAF;
+}
+
+vector<AABB> Octree::divideBB() const {
+   vector<AABB> childBB(8);
+   Point minP = BB.minAABB;
+   Point maxP = BB.maxAABB;
+   Point center = BB.center();
+
+   childBB[0] = AABB(Point(minP.x, minP.y, minP.z), Point(center.x, center.y, center.z));
+   childBB[1] = AABB(Point(center.x, minP.y, minP.z), Point(maxP.x, center.y, center.z));
+   childBB[2] = AABB(Point(minP.x, center.y, minP.z), Point(center.x, maxP.y, center.z));
+   childBB[3] = AABB(Point(center.x, center.y, minP.z), Point(maxP.x, maxP.y, center.z));
+   childBB[4] = AABB(Point(minP.x, minP.y, center.z), Point(center.x, center.y, maxP.z));
+   childBB[5] = AABB(Point(center.x, minP.y, center.z), Point(maxP.x, center.y, maxP.z));
+   childBB[6] = AABB(Point(minP.x, center.y, center.z), Point(center.x, maxP.y, maxP.z));
+   childBB[7] = AABB(Point(center.x, center.y, center.z), Point(maxP.x, maxP.y, maxP.z));
+
+   return childBB;
 }
