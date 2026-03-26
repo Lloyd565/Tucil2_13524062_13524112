@@ -3,7 +3,7 @@
 #include "Octree.hpp"
 
 using namespace std;
-vector<Triangle*> newTriangles;
+vector<AABB*> resultingVoxels;
 // D&C
 Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currDepth,int maxDepth,int& voxelCnt,vector<int>& nodesPerDepth,vector<int>& prunedPerDepth)
 {
@@ -18,7 +18,7 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
         voxelCnt++;
         node = new Octree(bbox, true, true);
         for (const Triangle& tri : triangles){
-            newTriangles.push_back(new Triangle(tri.v0, tri.v1, tri.v2));
+            resultingVoxels.push_back(new AABB(bbox.minAABB, bbox.maxAABB));
         }
     }
     // Divide
@@ -44,15 +44,15 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
 //     vector<Triangle*> newTriangles;
 //     if (VoxelTree.isMaxDepth) { return }
 // }
-int findIndexPosition(const Point& Vertice, const vector<Point> verticeList){
-    for (int i = 0; i < verticeList.size(); i++){
-        if (verticeList[i] == Vertice){
-            return i;
-        }
-    }
-    return -1;
-}
-void VoxelWrite(const vector<Triangle*>& newTriangles, const vector<Point>& oldVertices, const string& outputPath) {
+// int findIndexPosition(const Point& Vertice, const vector<Point> verticeList){
+//     for (int i = 0; i < verticeList.size(); i++){
+//         if (verticeList[i] == Vertice){
+//             return i;
+//         }
+//     }
+//     return -1;
+// }
+void VoxelWrite(const vector<AABB*>& resultingVoxels, const string& outputPath) {
     vector<int> faceList;
     ofstream outFile;
     outFile.open(outputPath);
@@ -60,24 +60,36 @@ void VoxelWrite(const vector<Triangle*>& newTriangles, const vector<Point>& oldV
         cerr << "Error: Tidak dapat membuka file untuk ditulis." << endl;
         return;
     }
-    for (int i = 0; i< newTriangles.size(); i++){
-        Triangle* tri = newTriangles[i];
-        outFile << "v " << tri->v0.x << " " << tri->v0.y << " " << tri->v0.z << endl;
-        outFile << "v " << tri->v1.x << " " << tri->v1.y << " " << tri->v1.z << endl;
-        outFile << "v " << tri->v2.x << " " << tri->v2.y << " " << tri->v2.z << endl;
-        int idx0 = findIndexPosition(tri->v0, oldVertices);
-        int idx1 = findIndexPosition(tri->v1, oldVertices);
-        int idx2 = findIndexPosition(tri->v2, oldVertices);
-        if (idx0 == -1 || idx1 == -1 || idx2 == -1){
-            cerr << "Error: Vertice tidak ditemukan pada vertice list." << endl;
-            return;
-        }
-        faceList.push_back(idx0 + 1);
-        faceList.push_back(idx1 + 1);
-        faceList.push_back(idx2 + 1);
+    int count = 0;
+    for (int i = 0; i< resultingVoxels.size(); i++){
+        AABB* box = resultingVoxels[i];
+        Point maxP = box->maxAABB;
+        Point minP = box->minAABB;
+        Point v1 = Point(minP.x, minP.y, minP.z);
+        Point v2 = Point(minP.x, maxP.y, minP.z);
+        Point v3 = Point(minP.x, maxP.y, maxP.z);
+        Point v4 = Point(minP.x, minP.y, maxP.z);
+        Point v5 = Point(maxP.x, minP.y, minP.z);
+        Point v6 = Point(maxP.x, maxP.y, minP.z);
+        Point v7 = Point(maxP.x, maxP.y, maxP.z);
+        Point v8 = Point(maxP.x, minP.y, maxP.z);
+        outFile << "v " << v1.x << " " << v1.y << " " << v1.z << endl;
+        outFile << "v " << v2.x << " " << v2.y << " " << v2.z << endl;
+        outFile << "v " << v3.x << " " << v3.y << " " << v3.z << endl;
+        outFile << "v " << v4.x << " " << v4.y << " " << v4.z << endl;
+        outFile << "v " << v5.x << " " << v5.y << " " << v5.z << endl;
+        outFile << "v " << v6.x << " " << v6.y << " " << v6.z << endl;
+        outFile << "v " << v7.x << " " << v7.y << " " << v7.z << endl;
+        outFile << "v " << v8.x << " " << v8.y << " " << v8.z << endl;
     }
-    for (int i = 0; i < faceList.size(); i+=3){
-        outFile << "f " << faceList[i] << " " << faceList[i+1] << " " << faceList[i+2] << endl;
+    for (int i = 0; i < resultingVoxels.size(); i++){
+        int counter = i*8;
+        outFile << "f " << counter+1 << " " << counter+2 << " " << counter+3 << " " << counter+4 << endl;
+        outFile << "f " << counter+1 << " " << counter+2 << " " << counter+6 << " " << counter+5 << endl;
+        outFile << "f " << counter+5 << " " << counter+6 << " " << counter+7 << " " << counter+8 << endl;
+        outFile << "f " << counter+4 << " " << counter+3 << " " << counter+7 << " " << counter+8 << endl;
+        outFile << "f " << counter+1 << " " << counter+4 << " " << counter+8 << " " << counter+5 << endl;
+        outFile << "f " << counter+2 << " " << counter+3 << " " << counter+7 << " " << counter+6 << endl;
     }
     outFile.close();
 }
@@ -178,7 +190,7 @@ int main() {
 
     outputPath = "ayam.obj";
     // TODO: VoxelWriter : tulis file output.obj
-    VoxelWrite(newTriangles, parser.vertices, outputPath);
+    VoxelWrite(resultingVoxels, outputPath);
     // Bersihkan mem
     if (root != nullptr) {
         delete root;
