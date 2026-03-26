@@ -3,7 +3,7 @@
 #include "Octree.hpp"
 
 using namespace std;
-
+vector<Triangle*> newTriangles;
 // D&C
 Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currDepth,int maxDepth,int& voxelCnt,vector<int>& nodesPerDepth,vector<int>& prunedPerDepth)
 {
@@ -17,6 +17,9 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
         nodesPerDepth[currDepth]++;
         voxelCnt++;
         node = new Octree(bbox, true, true);
+        for (const Triangle& tri : triangles){
+            newTriangles.push_back(new Triangle(tri.v0, tri.v1, tri.v2));
+        }
     }
     // Divide
     else {
@@ -35,6 +38,48 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
     }
 
     return node;
+}
+
+// vector<Triangle*> getNewTriangles(const Octree& VoxelTree){
+//     vector<Triangle*> newTriangles;
+//     if (VoxelTree.isMaxDepth) { return }
+// }
+int findIndexPosition(const Point& Vertice, const vector<Point> verticeList){
+    for (int i = 0; i < verticeList.size(); i++){
+        if (verticeList[i] == Vertice){
+            return i;
+        }
+    }
+    return -1;
+}
+void VoxelWrite(const vector<Triangle*>& newTriangles, const vector<Point>& oldVertices, const string& outputPath) {
+    vector<int> faceList;
+    ofstream outFile;
+    outFile.open(outputPath);
+    if (!outFile) {
+        cerr << "Error: Tidak dapat membuka file untuk ditulis." << endl;
+        return;
+    }
+    for (int i = 0; i< newTriangles.size(); i++){
+        Triangle* tri = newTriangles[i];
+        outFile << "v " << tri->v0.x << " " << tri->v0.y << " " << tri->v0.z << endl;
+        outFile << "v " << tri->v1.x << " " << tri->v1.y << " " << tri->v1.z << endl;
+        outFile << "v " << tri->v2.x << " " << tri->v2.y << " " << tri->v2.z << endl;
+        int idx0 = findIndexPosition(tri->v0, oldVertices);
+        int idx1 = findIndexPosition(tri->v1, oldVertices);
+        int idx2 = findIndexPosition(tri->v2, oldVertices);
+        if (idx0 == -1 || idx1 == -1 || idx2 == -1){
+            cerr << "Error: Vertice tidak ditemukan pada vertice list." << endl;
+            return;
+        }
+        faceList.push_back(idx0 + 1);
+        faceList.push_back(idx1 + 1);
+        faceList.push_back(idx2 + 1);
+    }
+    for (int i = 0; i < faceList.size(); i+=3){
+        outFile << "f " << faceList[i] << " " << faceList[i+1] << " " << faceList[i+2] << endl;
+    }
+    outFile.close();
 }
 
 int main() {
@@ -131,7 +176,9 @@ int main() {
     cout << "Output disimpan di: " << outputPath << endl;
     cout << "============================================" << endl;
 
+    outputPath = "ayam.obj";
     // TODO: VoxelWriter : tulis file output.obj
+    VoxelWrite(newTriangles, parser.vertices, outputPath);
     // Bersihkan mem
     if (root != nullptr) {
         delete root;

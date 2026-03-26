@@ -7,5 +7,6 @@ class Parser {
     public:
         vector<Point> vertices;
         vector<int> faces;
+        ~Parser()=default;
         void parse(const string& filepath);
 };
