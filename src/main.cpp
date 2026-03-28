@@ -41,14 +41,6 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
     return node;
 }
 
-int findIndexPosition(const Point& Vertice, const vector<Point> verticeList){
-    for (int i = 0; i < verticeList.size(); i++){
-        if (verticeList[i] == Vertice){
-            return i;
-        }
-    }
-    return -1;
-}
 void writeVoxels(Octree* node, std::ofstream& outF, int& currVertexIndex) {
     if (node == nullptr) return;
     if (node->isVoxel) {
@@ -156,7 +148,10 @@ int main() {
 
     int vertexCnt = voxelCnt * 8;
     int faceCnt = voxelCnt * 12;
-    string outputPath = "output.obj";
+    
+    std::filesystem::path p(filepath);
+    string outputPath = "test/" + p.stem().string() + "_voxel.obj";
+
     cout << endl;
     cout << "============================================" << endl;
     cout << "         HASIL VOXELISASI OCTREE            " << endl;
@@ -183,13 +178,14 @@ int main() {
     cout << "Output disimpan di: " << outputPath << endl;
     cout << "============================================" << endl;
 
-    outputPath = "output.obj";
-    std::ofstream outFile("output.obj");
+    std::ofstream outFile(outputPath);
     if (outFile.is_open()) {
         int startIdx = 0;
         writeVoxels(root, outFile, startIdx);
         outFile.close();
-        std::cout << "File Voxel berhasil ditulis ke: output.obj\n";
+        std::cout << "File Voxel berhasil ditulis ke: " << outputPath << "\n";
+    } else {
+        std::cerr << "Gagal membuka file untuk ditulis: " << outputPath << "\n";
     }
 
     // Bersihkan mem
