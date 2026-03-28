@@ -56,26 +56,32 @@ Pada Windows, gunakan [MinGW](https://www.mingw-w64.org/) atau [WSL](https://lea
 
 ## Cara Kompilasi
 
-Masuk ke direktori `src`, lalu jalankan perintah berikut:
+Jalankan perintah berikut dari folder utama project:
 
 ```bash
-g++ -std=c++17 -O2 -o voxelizer main.cpp parser.cpp AABB.cpp Octree.cpp
+g++ -std=c++17 -O2 -o voxelizer src/main.cpp src/parser.cpp src/AABB.cpp src/Octree.cpp
 ```
 
 Atau jika ingin menyimpan executable di folder `bin`:
 
 ```bash
-g++ -std=c++17 -O2 -o ../bin/voxelizer main.cpp parser.cpp AABB.cpp Octree.cpp
+g++ -std=c++17 -O2 -o bin/voxelizer src/main.cpp src/parser.cpp src/AABB.cpp src/Octree.cpp
 ```
 
 ---
 
 ## Cara Menjalankan Program
 
-Jalankan executable yang sudah dikompilasi:
+Jalankan executable yang sudah dikompilasi dari folder utama project:
 
 ```bash
 ./voxelizer
+```
+
+Jika executable disimpan di folder `bin`:
+
+```bash
+./bin/voxelizer
 ```
 
 Program akan meminta input :
