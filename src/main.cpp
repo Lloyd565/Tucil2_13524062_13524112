@@ -3,7 +3,7 @@
 #include "Octree.hpp"
 
 using namespace std;
-vector<Triangle*> newTriangles;
+vector<AABB*> resultingVoxels;
 // D&C
 Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currDepth,int maxDepth,int& voxelCnt,vector<int>& nodesPerDepth,vector<int>& prunedPerDepth, bool useSAT)
 {
@@ -18,7 +18,7 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
         voxelCnt++;
         node = new Octree(bbox, true, true);
         for (const Triangle& tri : triangles){
-            newTriangles.push_back(new Triangle(tri.v0, tri.v1, tri.v2));
+            resultingVoxels.push_back(new AABB(bbox.minAABB, bbox.maxAABB));
         }
     }
     // Div
