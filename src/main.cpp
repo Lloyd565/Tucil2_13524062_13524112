@@ -5,7 +5,7 @@
 using namespace std;
 vector<Triangle*> newTriangles;
 // D&C
-Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currDepth,int maxDepth,int& voxelCnt,vector<int>& nodesPerDepth,vector<int>& prunedPerDepth)
+Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currDepth,int maxDepth,int& voxelCnt,vector<int>& nodesPerDepth,vector<int>& prunedPerDepth, bool useSAT)
 {
     Octree* node = nullptr;
     // Base 1
@@ -21,7 +21,7 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
             newTriangles.push_back(new Triangle(tri.v0, tri.v1, tri.v2));
         }
     }
-    // Divide
+    // Div
     else {
         nodesPerDepth[currDepth]++;
         node = new Octree(bbox, false, false);
@@ -29,21 +29,18 @@ Octree* buildOctree(const AABB& bbox,const vector<Triangle>& triangles,int currD
         for (int i = 0; i < 8; i++) {
             vector<Triangle> childTriangles;
             for (const Triangle& tri : triangles) {
-                if (childBoxes[i].isIntersect(tri)) {
+                bool intersect = useSAT ? childBoxes[i].isIntersectSAT(tri) : childBoxes[i].isIntersect(tri);
+                if (intersect) {
                     childTriangles.push_back(tri);
                 }
             }
-            node->children[i] = buildOctree(childBoxes[i], childTriangles,currDepth + 1, maxDepth,voxelCnt, nodesPerDepth, prunedPerDepth);
+            node->children[i] = buildOctree(childBoxes[i], childTriangles,currDepth + 1, maxDepth,voxelCnt, nodesPerDepth, prunedPerDepth, useSAT);
         }
     }
 
     return node;
 }
 
-// vector<Triangle*> getNewTriangles(const Octree& VoxelTree){
-//     vector<Triangle*> newTriangles;
-//     if (VoxelTree.isMaxDepth) { return }
-// }
 int findIndexPosition(const Point& Vertice, const vector<Point> verticeList){
     for (int i = 0; i < verticeList.size(); i++){
         if (verticeList[i] == Vertice){
@@ -52,43 +49,53 @@ int findIndexPosition(const Point& Vertice, const vector<Point> verticeList){
     }
     return -1;
 }
-void VoxelWrite(const vector<Triangle*>& newTriangles, const vector<Point>& oldVertices, const string& outputPath) {
-    vector<int> faceList;
-    ofstream outFile;
-    outFile.open(outputPath);
-    if (!outFile) {
-        cerr << "Error: Tidak dapat membuka file untuk ditulis." << endl;
+void writeVoxels(Octree* node, std::ofstream& outF, int& currVertexIndex) {
+    if (node == nullptr) return;
+    if (node->isVoxel) {
+        Point minP = node->BB.minAABB;
+        Point maxP = node->BB.maxAABB;
+        outF << "v " << minP.x << " " << minP.y << " " << minP.z << endl;
+        outF << "v " << maxP.x << " " << minP.y << " " << minP.z << endl;
+        outF << "v " << maxP.x << " " << maxP.y << " " << minP.z << endl;
+        outF << "v " << minP.x << " " << maxP.y << " " << minP.z << endl;
+        outF << "v " << minP.x << " " << minP.y << " " << maxP.z << endl;
+        outF << "v " << maxP.x << " " << minP.y << " " << maxP.z << endl;
+        outF << "v " << maxP.x << " " << maxP.y << " " << maxP.z << endl;
+        outF << "v " << minP.x << " " << maxP.y << " " << maxP.z << endl;
+        //face
+        int v = currVertexIndex;         
+        outF << "f " << v+1 << " " << v+2 << " " << v+3 << endl;
+        outF << "f " << v+1 << " " << v+3 << " " << v+4 << endl;
+        outF << "f " << v+5 << " " << v+8 << " " << v+7 << endl;
+        outF << "f " << v+5 << " " << v+7 << " " << v+6 << endl;
+        outF << "f " << v+1 << " " << v+5 << " " << v+6 << endl;
+        outF << "f " << v+1 << " " << v+6 << " " << v+2 << endl;
+        outF << "f " << v+4 << " " << v+3 << " " << v+7 << endl;
+        outF << "f " << v+4 << " " << v+7 << " " << v+8 << endl;
+        outF << "f " << v+1 << " " << v+4 << " " << v+8 << endl;
+        outF << "f " << v+1 << " " << v+8 << " " << v+5 << endl;
+        outF << "f " << v+2 << " " << v+6 << " " << v+7 << endl;
+        outF << "f " << v+2 << " " << v+7 << " " << v+3 << endl;
+        currVertexIndex += 8; 
         return;
     }
-    for (int i = 0; i< newTriangles.size(); i++){
-        Triangle* tri = newTriangles[i];
-        outFile << "v " << tri->v0.x << " " << tri->v0.y << " " << tri->v0.z << endl;
-        outFile << "v " << tri->v1.x << " " << tri->v1.y << " " << tri->v1.z << endl;
-        outFile << "v " << tri->v2.x << " " << tri->v2.y << " " << tri->v2.z << endl;
-        int idx0 = findIndexPosition(tri->v0, oldVertices);
-        int idx1 = findIndexPosition(tri->v1, oldVertices);
-        int idx2 = findIndexPosition(tri->v2, oldVertices);
-        if (idx0 == -1 || idx1 == -1 || idx2 == -1){
-            cerr << "Error: Vertice tidak ditemukan pada vertice list." << endl;
-            return;
-        }
-        faceList.push_back(idx0 + 1);
-        faceList.push_back(idx1 + 1);
-        faceList.push_back(idx2 + 1);
+    for (int i = 0; i < 8; i++) {
+        writeVoxels(node->children[i], outF, currVertexIndex);
     }
-    for (int i = 0; i < faceList.size(); i+=3){
-        outFile << "f " << faceList[i] << " " << faceList[i+1] << " " << faceList[i+2] << endl;
-    }
-    outFile.close();
 }
+
 
 int main() {
     string filepath;
     int maxDepth;
+    int method;
     cout << "Masukkan path file .obj: ";
     getline(cin, filepath);
     cout << "Masukkan maxDepth: ";
     cin >> maxDepth;
+    cout << "Pilih metode intersection (1: AABBvsAABB, 2:SAT): ";
+    cin >> method;
+    bool useSAT = (method == 2);
 
     if (maxDepth < 1) {
         cerr << "Error:  harus >= 1." << endl;
@@ -142,7 +149,7 @@ int main() {
     //Build
     auto startTime = chrono::high_resolution_clock::now();
     Octree* root = buildOctree(rootBox, triangles, 1, maxDepth,
-                               voxelCnt, nodesPerDepth, prunedPerDepth);
+                               voxelCnt, nodesPerDepth, prunedPerDepth, useSAT);
     auto endTime = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> elapsed = endTime - startTime;
 
@@ -176,9 +183,15 @@ int main() {
     cout << "Output disimpan di: " << outputPath << endl;
     cout << "============================================" << endl;
 
-    outputPath = "ayam.obj";
-    // TODO: VoxelWriter : tulis file output.obj
-    VoxelWrite(newTriangles, parser.vertices, outputPath);
+    outputPath = "output.obj";
+    std::ofstream outFile("output.obj");
+    if (outFile.is_open()) {
+        int startIdx = 0;
+        writeVoxels(root, outFile, startIdx);
+        outFile.close();
+        std::cout << "File Voxel berhasil ditulis ke: output.obj\n";
+    }
+
     // Bersihkan mem
     if (root != nullptr) {
         delete root;
